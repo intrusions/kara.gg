@@ -13,7 +13,7 @@
 using namespace std;
 
 
-uintptr_t GetBase(DWORD dw_pid, char* modulename);
+uintptr_t GetBase(DWORD dw_pid, char* module_name);
 uintptr_t ReadMem(HANDLE process_handle, uintptr_t address);
 template<typename T>
 void WriteMem(HANDLE process_handle, uintptr_t address, T value);
@@ -66,6 +66,7 @@ int main() {
                     }
                     WriteMem(process_handle, glow_manager + ((glow * 0x38) + 0x24), true);
                     WriteMem(process_handle, glow_manager + ((glow * 0x38) + 0x25), false);
+
                 }
             }
         }
@@ -115,7 +116,7 @@ void WriteMem(HANDLE process_handle, uintptr_t address, T value)
     WriteProcessMemory(process_handle, (LPVOID)address, &value, sizeof(value), NULL);
 }
 
-uintptr_t GetBase(DWORD dw_pid, char* moduleName) 
+uintptr_t GetBase(DWORD dw_pid, char* module_name) 
 {
     uintptr_t module_base = 0;
     HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, dw_pid);
@@ -128,7 +129,7 @@ uintptr_t GetBase(DWORD dw_pid, char* moduleName)
             do
             {
                 _bstr_t moduleEntryName(moduleEntry.szModule);
-                if (!(strcmp(moduleEntryName, moduleName)))
+                if (!(strcmp(moduleEntryName, module_name)))
                 {
                     module_base = (uintptr_t)moduleEntry.modBaseAddr;
                     break;
