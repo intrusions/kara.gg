@@ -1,9 +1,0 @@
-﻿  csgo_wh.cpp
-C:\Users\xelor\Desktop\csgo_wh\csgo_wh.cpp(34,13): warning C4566: le caractère représenté par le nom de caractère universel '\U0001F1F7' ne peut pas être représenté dans la page de codes actuelle (1252)
-C:\Users\xelor\Desktop\csgo_wh\csgo_wh.cpp(34,13): warning C4566: le caractère représenté par le nom de caractère universel '\u200B' ne peut pas être représenté dans la page de codes actuelle (1252)
-C:\Users\xelor\Desktop\csgo_wh\csgo_wh.cpp(34,13): warning C4566: le caractère représenté par le nom de caractère universel '\U0001F1E6' ne peut pas être représenté dans la page de codes actuelle (1252)
-C:\Users\xelor\Desktop\csgo_wh\csgo_wh.cpp(34,13): warning C4566: le caractère représenté par le nom de caractère universel '\U0001F1EA' ne peut pas être représenté dans la page de codes actuelle (1252)
-C:\Users\xelor\Desktop\csgo_wh\csgo_wh.cpp(34,13): warning C4566: le caractère représenté par le nom de caractère universel '\U0001F1F0' ne peut pas être représenté dans la page de codes actuelle (1252)
-C:\Users\xelor\Desktop\csgo_wh\csgo_wh.cpp(34,13): warning C4566: le caractère représenté par le nom de caractère universel '\U0001F1F5' ne peut pas être représenté dans la page de codes actuelle (1252)
-C:\Users\xelor\Desktop\csgo_wh\csgo_wh.cpp(34,13): warning C4566: le caractère représenté par le nom de caractère universel '\U0001F1F4' ne peut pas être représenté dans la page de codes actuelle (1252)
-  csgo_wh.vcxproj -> C:\Users\xelor\Desktop\csgo_wh\Debug\csgo_wh.exe
