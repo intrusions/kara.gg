@@ -86,7 +86,7 @@ int main() {
 				if (crosshair && crosshair < MAXPLAYERS)
 				{
 					uintptr_t player_in_crosshair = ReadMem(process_handle, base + hazedumper::signatures::dwEntityList + (crosshair - 1) * 16);
-					if (player_in_crosshair != NULL)
+					if (player_in_crosshair)
 					{
 						int playerTeam = ReadMem(process_handle, player_in_crosshair + hazedumper::netvars::m_iTeamNum);
 						int p_team = ReadMem(process_handle, player + hazedumper::netvars::m_iTeamNum); 
