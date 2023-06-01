@@ -1,8 +1,23 @@
 # kara.gg
 
+## Description
+[kara.gg](https://github.com/intrusions/kara.gg) is basic cs:go external cheat using multithreading for each loop (glow, aimbot, trigger, radar hack), written in c++.
 
-![image](https://github.com/intrusions/kara.gg/assets/65361679/dd12cc58-9546-4a33-9c37-716b7cd7b583)
+## Features
+- Aimbot
+- RadarHack
+- Glow
+- Trigger
 
-![image](https://github.com/intrusions/kara.gg/assets/65361679/88aa56b5-b03e-4641-80c4-a11430d23ccc)
+## Screenshots
+![Screenshot 1](https://github.com/intrusions/kara.gg/assets/65361679/dd12cc58-9546-4a33-9c37-716b7cd7b583)
+![Screenshot 2](https://github.com/intrusions/kara.gg/assets/65361679/88aa56b5-b03e-4641-80c4-a11430d23ccc)
 
-![aim_fov_50.gif](./aim_fov_50.gif)
+## Demo
+![Demo GIF](./aim_fov_50.gif)
+
+## Setp & Installation
+1. Clone the repository: `git clone https://github.com/intrusions/kara.gg.git`
+2. Setup your aimbot FOV and your keys in `Bypass.hpp'
+3. Open the project in `Visual Studio Community` and compile it in `Release x86` mode
+4. Execute it when the game is launched
