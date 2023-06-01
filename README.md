@@ -16,7 +16,7 @@
 ## Aimbot demo (FOV_50)
 ![Demo GIF](./aim_fov_50.gif)
 
-## Setp & Installation
+## Installation & Setup
 1. Clone the repository: `git clone https://github.com/intrusions/kara.gg.git`
 2. Setup your aimbot FOV and your keys in `Bypass.hpp'
 3. Open the project in `Visual Studio Community` and compile it in `Release x86` mode
