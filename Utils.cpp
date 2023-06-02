@@ -1,12 +1,19 @@
 #include "Utils.hpp"
 
 void	printHeader() {
+
 	std::cout << "  _                     _____  _____ " << std::endl;
 	std::cout << " | |                   / ____|/ ____|" << std::endl;
 	std::cout << " | | ____ _ _ __ __ _ | |  __| |  __ " << std::endl;
 	std::cout << " | |/ / _` | '__/ _` || | |_ | | |_ |" << std::endl;
 	std::cout << " |   < (_| | | | (_| || |__| | |__| |" << std::endl;
 	std::cout << " |_|\\_\\__,_|_|  \\__,_(_)_____|\\_____|" << std::endl;
+}
+
+void printWaitForEnterKey() {
+
+	std::cout << "Press Enter to continue...";
+	std::cin.get();
 }
 
 void	printGreen(std::string str, bool nl) {
@@ -35,7 +42,21 @@ void	printRed(std::string str, bool nl) {
 	SetConsoleTextAttribute(handle, 15);
 }
 
-void	printCheatIsActive(bool aim, bool glow, bool trig, bool radar) {
+void	printOn() {
+
+	std::cout << "|    ";
+	printGreen("ON", false);
+	std::cout << "    ";
+}
+
+void	printOff() {
+
+	std::cout << "|    ";
+	printRed("OFF", false);
+	std::cout << "   ";
+}
+
+void	printMenu(Mutex *mutex) {
 
 	std::system("cls");
 	printHeader();
@@ -43,48 +64,10 @@ void	printCheatIsActive(bool aim, bool glow, bool trig, bool radar) {
 
 	std::cout << "|    AIMBOT|      GLOW|      TRIG|  RADAR 2D|" << std::endl;
 
-	if (aim) {
-		std::cout << "|    ";
-		printGreen("ON", false);
-		std::cout << "    |";
-	} else {
-		std::cout << "|    ";
-		printRed("OFF", false);
-		std::cout << "   |";
-	}
+	mutex->aimbotIsActive ? printOn() : printOff();
+	mutex->glowIsActive ? printOn() : printOff();
+	mutex->trigIsActive ? printOn() : printOff();
+	mutex->radarIsActive ? printOn() : printOff();
 
-	if (glow) {
-		std::cout << "    ";
-		printGreen("ON", false);
-		std::cout << "    |";
-	} else {
-		std::cout << "    ";
-		printRed("OFF", false);
-		std::cout << "   |";
-	}
-
-	if (trig) {
-		std::cout << "    ";
-		printGreen("ON", false);
-		std::cout << "    |";
-	} else {
-		std::cout << "    ";
-		printRed("OFF", false);
-		std::cout << "   |";
-	}
-
-	if (radar) {
-		std::cout << "    ";
-		printGreen("ON", false);
-		std::cout << "    |";
-	} else {
-		std::cout << "    ";
-		printRed("OFF", false);
-		std::cout << "   |";
-	}
-}
-
-void printWaitForEnterKey() {
-	std::cout << "Press Enter to continue...";
-	std::cin.get();
+	std::cout << "|" << std::endl;
 }

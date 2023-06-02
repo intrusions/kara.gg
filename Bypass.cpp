@@ -4,7 +4,11 @@
 #include "Utils.hpp"
 
 /* constructor - destructor */
-Bypass::Bypass() {}
+Bypass::Bypass()
+	: m_hProcess(NULL)
+	, m_processId(NULL)
+	, m_modBaseAddr(NULL)
+	, m_engineAddr(NULL) {}
 
 Bypass::~Bypass() {
 	if (m_hProcess)
@@ -73,8 +77,8 @@ void	Bypass::m_writeProcessMemory(uintptr_t lpBaseAddress, T lpBuffer) {
 
 
 /* cheating function */
-void	Bypass::m_glow(std::atomic<bool> &isActive) {
-	while (isActive) {
+void	Bypass::m_glow() {
+	while (m_mutex.glowIsActive) {
 
 		uintptr_t	player = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
 		uintptr_t	glowManager = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwGlowObjectManager);
@@ -90,22 +94,21 @@ void	Bypass::m_glow(std::atomic<bool> &isActive) {
 				uint32_t	glow = m_readProcessMemory<uint32_t>(otherPlayer + offsets::m_iGlowIndex);
 
 				if (otherPlayerTeam != pTeam) {
-					m_writeProcessMemory(glowManager + ((glow * 0x38) + 4), 2.0f);
-					m_writeProcessMemory(glowManager + ((glow * 0x38) + 8), 0.0f);
-					m_writeProcessMemory(glowManager + ((glow * 0x38) + 12), 0.0f);
-					m_writeProcessMemory(glowManager + ((glow * 0x38) + 16), 0.5f);
+					m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x8), 1.f);
+					m_writeProcessMemory(glowManager + ((glow * 0x38) + 0xC), 0.0f);
+					m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x10), 0.0f);
+					m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x14), 1.f);
 				}
-				m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x24), true);
-				m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x25), false);
+				m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x27), true);
+				m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x28), true);
 			}
 		}
 	}
 }
 
-void	Bypass::m_trig(std::atomic<bool> &isActive) {
-	while (isActive) {
-
-		if (GetAsyncKeyState(0x43)) {
+void	Bypass::m_trig() {
+	while (m_mutex.trigIsActive) {
+		if (GetAsyncKeyState(K_TRIGLOCK)) {
 
 			uintptr_t player = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
 			uintptr_t crosshair = m_readProcessMemory<uintptr_t>(player + offsets::m_iCrosshairId);
@@ -130,8 +133,8 @@ void	Bypass::m_trig(std::atomic<bool> &isActive) {
 	}
 }
 
-void	Bypass::m_radar(std::atomic<bool> &isActive) {
-	while (isActive) {
+void	Bypass::m_radar() {
+	while (m_mutex.radarIsActive) {
 
 		uintptr_t	player = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
 		uint32_t	pTeam = m_readProcessMemory<uint32_t>(player + offsets::m_iTeamNum);
@@ -149,11 +152,11 @@ void	Bypass::m_radar(std::atomic<bool> &isActive) {
 	}
 }
 
-void	Bypass::m_aimbot(std::atomic<bool> &isActive) {
-	while (isActive) {
+void	Bypass::m_aimbot() {
+	while (m_mutex.aimbotIsActive) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-		if (!GetAsyncKeyState(VK_LBUTTON))
+		if (!GetAsyncKeyState(K_AIMLOCK))
 			continue;
 
 		const uintptr_t	&lPlayer = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
@@ -211,86 +214,74 @@ void	Bypass::m_aimbot(std::atomic<bool> &isActive) {
 			}
 		}
 		if (!bestAngle.IsZero()) {
-			m_writeProcessMemory(clientState + offsets::dwClientState_ViewAngles, viewAngles + bestAngle / 3.f);
+			m_writeProcessMemory(clientState + offsets::dwClientState_ViewAngles, viewAngles + bestAngle / AIMBOT_SMOOTH);
 		}
 	}
 }
 
 
 /* main function */
-void	Bypass::startMultiThreading(void) {
+void	Bypass::startMultiThreading() {
 	
-	std::atomic<bool> trigIsActive(false);
-	std::atomic<bool> radarIsActive(false);
-	std::atomic<bool> aimbotIsActive(false);
-	std::atomic<bool> glowIsActive(false);
-
 	bool	refreshMenu;
 
-	printCheatIsActive(aimbotIsActive, glowIsActive, trigIsActive, radarIsActive);
+	printMenu(&m_mutex);
 
 	while (true) {
-		
-		refreshMenu = 0;
+
+		refreshMenu = false;
 
 		/* Aimbot part's */
 		if (GetAsyncKeyState(K_AIMBOT) & 0x8000) {
+			refreshMenu = true;
+			m_mutex.aimbotIsActive = !m_mutex.aimbotIsActive;
 
-			if (!aimbotIsActive) {
-				aimbotIsActive = true;
-				std::thread aimbotThread(&Bypass::m_aimbot, this, std::ref(aimbotIsActive));
+			if (m_mutex.aimbotIsActive) {
+				m_mutex.aimbotIsActive = true;
+				std::thread aimbotThread(&Bypass::m_aimbot, this);
 				aimbotThread.detach();
-			} else {
-				aimbotIsActive = false;
 			}
-			refreshMenu = 1;
 		}
 
 		/* Trigger part's */
 		if (GetAsyncKeyState(K_TRIG) & 0x8000) {
+			refreshMenu = true;
+			m_mutex.trigIsActive = !m_mutex.trigIsActive;
 
-			if (!trigIsActive) {
-				
-				trigIsActive = true;
-				std::thread triggerThread(&Bypass::m_trig, this, std::ref(trigIsActive));
+			if (m_mutex.trigIsActive) {
+				m_mutex.trigIsActive = true;
+				std::thread triggerThread(&Bypass::m_trig, this);
 				triggerThread.detach();
-			} else {
-				trigIsActive = false;
 			}
-			refreshMenu = 1;
 		}
 
 		/* Radar hack part's */
 		if (GetAsyncKeyState(K_RADAR) & 0x8000) {
+				refreshMenu = true;
+				m_mutex.radarIsActive = !m_mutex.radarIsActive;
 
-			if (!radarIsActive) {
-
-				radarIsActive = true;
-				std::thread radarThread(&Bypass::m_radar, this, std::ref(radarIsActive));
+			if (m_mutex.radarIsActive) {
+				m_mutex.radarIsActive = true;
+				std::thread radarThread(&Bypass::m_radar, this);
 				radarThread.detach();
-			} else {
-				radarIsActive = false;
 			}
-			refreshMenu = 1;
 		}
 
-		/* Glow ESP part's */
+		/* Glow part's */
 		if (GetAsyncKeyState(K_GLOW) & 0x8000) {
+			refreshMenu = true;
+			m_mutex.glowIsActive = !m_mutex.glowIsActive;
 
-			if (!glowIsActive) {
-
-				glowIsActive = true;
-				std::thread glowThread(&Bypass::m_glow, this, std::ref(glowIsActive));
+			if (m_mutex.glowIsActive) {
+				m_mutex.glowIsActive = true;
+				std::thread glowThread(&Bypass::m_glow, this);
 				glowThread.detach();
-			} else {
-				glowIsActive = false;
-			}
-			refreshMenu = 1;
+			} 
 		}
 
 		/* menu part's */
 		if (refreshMenu)
-			printCheatIsActive(aimbotIsActive, glowIsActive, trigIsActive, radarIsActive);
+			printMenu(&m_mutex);
 
 		Sleep(200);
 	}

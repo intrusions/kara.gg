@@ -14,7 +14,7 @@ int main()
 			&& bypass->getModuleBaseAddress(CLIENT_MODNAME)
 			&& bypass->getModuleBaseAddress(ENGINE_MODNAME))
 	{
-		printGreen("success", true);
+		printGreen("Success", true);
 		printWaitForEnterKey();
 		bypass->startMultiThreading();
 	} else {

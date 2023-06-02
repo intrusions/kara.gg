@@ -1,5 +1,6 @@
 #pragma once
 
+#include "MultiThreading.hpp"
 #include <windows.h>
 #include <iostream>
 #include <cstdlib>
@@ -8,7 +9,7 @@
 void	printHeader(void);
 void	printGreen(std::string str, bool nl);
 void	printRed(std::string str, bool nl);
-void	printCheatIsActive(bool aim, bool glow, bool trig, bool radar);
+void	printOn(void);
+void	printOff(void);
+void	printMenu(Mutex *mutex);
 void	printWaitForEnterKey(void);
-
-

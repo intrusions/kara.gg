@@ -1,6 +1,6 @@
 #pragma once
 
-/* libs */
+#include "MultiThreading.hpp"
 #include <iostream>
 #include <Windows.h>
 #include <TlHelp32.h>
@@ -14,23 +14,27 @@
 #define ENGINE_MODNAME	"engine.dll"
 
 /* ingame settings */
-#define MAXPLAYERS		64
-#define AIMBOT_FOV		1.5f
+#define MAXPLAYERS		32
+#define AIMBOT_FOV		50.f
+#define AIMBOT_SMOOTH	3.f
 
 /* keys settings */
 #define K_AIMBOT		0x37
 #define K_GLOW			0x38
 #define K_TRIG			0x39
 #define K_RADAR			0x30
+#define K_AIMLOCK		0x01
+#define	K_TRIGLOCK		0x43
 
 
 class Bypass {
 
 	private:
-		HANDLE		m_hProcess = NULL;
-		DWORD		m_processId = 0;
-		uintptr_t	m_modBaseAddr = 0;
-		uintptr_t	m_engineAddr = 0;
+		HANDLE			m_hProcess;
+		DWORD			m_processId;
+		uintptr_t		m_modBaseAddr;
+		uintptr_t		m_engineAddr;
+		Mutex			m_mutex;
 
 	public:
 		Bypass();
@@ -54,9 +58,8 @@ class Bypass {
 
 
 		/* cheating function */
-		void	m_aimbot(std::atomic<bool> &isActive);
-		void	m_glow(std::atomic<bool> &isActive);
-		void	m_trig(std::atomic<bool> &isActive);
-		void	m_radar(std::atomic<bool> &isActive);
+		void	m_aimbot(void);
+		void	m_glow(void);
+		void	m_trig(void);
+		void	m_radar(void);
 };
-
