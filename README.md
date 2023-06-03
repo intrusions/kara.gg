@@ -6,8 +6,9 @@
 ## Features
 - Aimbot
 - RadarHack
-- Glow
+- Glow ESP
 - Trigger
+- Skin changer
 
 ## Screenshots
 ![Screenshot 1](https://github.com/intrusions/kara.gg/assets/65361679/dd12cc58-9546-4a33-9c37-716b7cd7b583)
@@ -20,5 +21,5 @@
 1. Clone the repository: `git clone https://github.com/intrusions/kara.gg.git`
 2. Setup your aimbot FOV and your keys in `Bypass.hpp'
 3. Update the offsets with the new ones respecting the current format: `https://github.com/frk1/hazedumper.git`
-4. Open the project in `Visual Studio Community` and compile it in `Release x86` mode
+4. Open the project in `Visual Studio` and compile it in `Release x86` mode
 5. Execute it when the game is launched
