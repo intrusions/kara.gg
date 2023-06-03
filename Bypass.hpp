@@ -1,12 +1,14 @@
 #pragma once
 
-#include "MultiThreading.hpp"
+#include "Mutex.hpp"
+#include "Weapons.hpp"
 #include <iostream>
 #include <Windows.h>
 #include <TlHelp32.h>
 #include <thread>
 #include <atomic>
 #include <iomanip>
+#include <array>
 
 /* game infos */
 #define WIN_NAME		"Counter-Strike: Global Offensive - Direct3D 9"
@@ -15,7 +17,7 @@
 
 /* ingame settings */
 #define MAXPLAYERS		32
-#define AIMBOT_FOV		50.f
+#define AIMBOT_FOV		1.5f
 #define AIMBOT_SMOOTH	3.f
 
 /* keys settings */
@@ -62,4 +64,5 @@ class Bypass {
 		void	m_glow(void);
 		void	m_trig(void);
 		void	m_radar(void);
+		void	m_skinChanger(void);
 };

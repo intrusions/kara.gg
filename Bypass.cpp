@@ -5,10 +5,10 @@
 
 /* constructor - destructor */
 Bypass::Bypass()
-	: m_hProcess(NULL)
-	, m_processId(NULL)
-	, m_modBaseAddr(NULL)
-	, m_engineAddr(NULL) {}
+	: m_hProcess(nullptr)
+	, m_processId(0)
+	, m_modBaseAddr(0)
+	, m_engineAddr(0) {}
 
 Bypass::~Bypass() {
 	if (m_hProcess)
@@ -219,6 +219,35 @@ void	Bypass::m_aimbot() {
 	}
 }
 
+void	Bypass::m_skinChanger() {
+	
+	while (true) {
+		uintptr_t	lPlayer = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
+		auto		weapons = m_readProcessMemory<std::array<unsigned long, 8>>(lPlayer + offsets::m_hMyWeapons);
+		
+		for (auto &handle : weapons) {
+		
+			uintptr_t weapon = m_readProcessMemory<uintptr_t>((m_modBaseAddr + offsets::dwEntityList + (handle & 0xFFF) * 0x10) - 0x10);
+			
+			if (!weapon)
+				continue;
+
+			if (short paint = getWeaponPaint(m_readProcessMemory<short>(weapon + offsets::m_iItemDefinitionIndex))) {
+
+				bool shouldUpdate = m_readProcessMemory<int32_t>(weapon + offsets::m_nFallbackPaintKit) != paint;
+
+				m_writeProcessMemory<int32_t>(weapon + offsets::m_iItemIDHigh, -1);
+				
+				m_writeProcessMemory<int32_t>(weapon + offsets::m_nFallbackPaintKit, paint);
+				m_writeProcessMemory<float>(weapon + offsets::m_flFallbackWear, 0.1f);
+
+				if (shouldUpdate)
+					m_writeProcessMemory<int32_t>(m_readProcessMemory<uintptr_t>(m_engineAddr + offsets::dwClientState) + 0x174, -1);
+			}
+		}
+	}
+}
+
 
 /* main function */
 void	Bypass::startMultiThreading() {
@@ -226,6 +255,10 @@ void	Bypass::startMultiThreading() {
 	bool	refreshMenu;
 
 	printMenu(&m_mutex);
+
+	/* skins changer part's */
+	std::thread skinChangerThread(&Bypass::m_skinChanger, this);
+	skinChangerThread.detach();
 
 	while (true) {
 

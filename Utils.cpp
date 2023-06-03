@@ -1,4 +1,5 @@
 #include "Utils.hpp"
+#include "Weapons.hpp"
 
 void	printHeader() {
 
@@ -70,4 +71,20 @@ void	printMenu(Mutex *mutex) {
 	mutex->radarIsActive ? printOn() : printOff();
 
 	std::cout << "|" << std::endl;
+}
+
+const int getWeaponPaint(const short itemId) {
+
+	switch (itemId)
+	{
+		case WEAPON_DEAGLE:			return 711;
+		case WEAPON_GLOCK:			return 38;
+		case WEAPON_AK47:			return 180;
+		case WEAPON_AWP:			return 446;
+		case WEAPON_USP_SILENCER:	return 653;
+		case WEAPON_M4A1_SILENCER:	return 497;
+		case WEAPON_M4A1:			return 309;
+		
+		default:					return 0;
+	}
 }

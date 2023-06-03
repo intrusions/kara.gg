@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MultiThreading.hpp"
+#include "Mutex.hpp"
 #include <windows.h>
 #include <iostream>
 #include <cstdlib>
@@ -13,3 +13,5 @@ void	printOn(void);
 void	printOff(void);
 void	printMenu(Mutex *mutex);
 void	printWaitForEnterKey(void);
+
+const int getWeaponPaint(const short itemId);
