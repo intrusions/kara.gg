@@ -21,6 +21,9 @@
 ## Glow ESP demo
 ![Demo GIF](./glow.gif)
 
+## Trigger demo
+![Demo GIF](./trigger.gif)
+
 ## Installation & Setup
 1. Clone the repository: `git clone https://github.com/intrusions/kara.gg.git`
 2. Setup your aimbot FOV and your keys in `settings.cfg`
