@@ -8,7 +8,8 @@ Bypass::Bypass()
 	: m_hProcess(nullptr)
 	, m_processId(0)
 	, m_modBaseAddr(0)
-	, m_engineAddr(0) {}
+	, m_engineAddr(0)
+	, m_mutex() {}
 
 Bypass::~Bypass() {
 	if (m_hProcess)
@@ -17,7 +18,8 @@ Bypass::~Bypass() {
 
 
 /* memory function */
-bool    Bypass::attach() {
+bool    Bypass::attach() noexcept {
+	
 	HWND	wHandle = FindWindowA(NULL, WIN_NAME);
 
 	if (wHandle) {
@@ -31,8 +33,8 @@ bool    Bypass::attach() {
 	return (false);
 }
 
-bool	Bypass::getModuleBaseAddress(const char* modName)
-{
+bool	Bypass::getModuleBaseAddress(const char* modName) noexcept {
+
 	HANDLE	hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, m_processId);
 	if (!hSnap)
 		return (false);
@@ -55,15 +57,49 @@ bool	Bypass::getModuleBaseAddress(const char* modName)
 	}
 	CloseHandle(hSnap);
 
-	if (m_modBaseAddr)
+	return (m_modBaseAddr ? true : false);
+}
+
+
+/*  parsing config file */
+bool	Bypass::ParseConfigFile(std::string cfgName) {
+
+	std::ifstream	cfg(cfgName);
+	uint32_t		delimiterPos;
+
+	std::string		key;
+	std::string		value;
+
+	std::variant<int, float>	convertedValue;
+
+	if (cfg.is_open()) {
+
+		std::string		line;
+		while (std::getline(cfg, line)) {
+			
+			delimiterPos = line.find('=');
+			key = line.substr(0, delimiterPos);
+			value = line.substr(delimiterPos + 1);
+
+			char*	end;
+			float	floatValue = std::strtof(value.c_str(), &end);
+
+			if (*end == '\0')
+				convertedValue = static_cast<int>(floatValue);
+			else
+				convertedValue = floatValue;
+
+			m_cfg[key] = convertedValue;
+		}
 		return (true);
+	}
 	return (false);
 }
 
 
 /* rpm/wpm function */
 template<typename T>
-T		&Bypass::m_readProcessMemory(uintptr_t lpBaseAddress) {
+inline T		&Bypass::m_readProcessMemory(uintptr_t lpBaseAddress) noexcept {
 
 	T	lpBuffer = { };
 	ReadProcessMemory(m_hProcess, reinterpret_cast<const void*>(lpBaseAddress), &lpBuffer, sizeof(T), NULL);
@@ -71,33 +107,44 @@ T		&Bypass::m_readProcessMemory(uintptr_t lpBaseAddress) {
 }
 
 template<typename T>
-void	Bypass::m_writeProcessMemory(uintptr_t lpBaseAddress, T lpBuffer) {
+inline void		Bypass::m_writeProcessMemory(uintptr_t lpBaseAddress, T lpBuffer) noexcept {
 	WriteProcessMemory(m_hProcess, (LPVOID)lpBaseAddress, &lpBuffer, sizeof(lpBuffer), NULL);
 }
 
 
 /* cheating function */
-void	Bypass::m_glow() {
+void	Bypass::m_glow() noexcept {
+
+	uintptr_t	player;
+	uintptr_t	glowManager;
+	uintptr_t	otherPlayer;
+	
+	uint32_t	pTeam;
+	uint32_t	otherPlayerTeam;
+	uint32_t	glow;
+	const uint8_t	MAXPLAYERS_CFG = std::get<int>(m_cfg["MAXPLAYERS"]);
+
 	while (m_mutex.glowIsActive) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(2));
 
-		uintptr_t	player = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
-		uintptr_t	glowManager = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwGlowObjectManager);
-		uint32_t	pTeam = m_readProcessMemory<uint32_t>(player + offsets::m_iTeamNum);
+		player = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
+		glowManager = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwGlowObjectManager);
+		pTeam = m_readProcessMemory<uint32_t>(player + offsets::m_iTeamNum);
 
-		for (uint8_t i = 0; i < MAXPLAYERS; i++) {
+		for (uint8_t i = 0; i < MAXPLAYERS_CFG; i++) {
 
-			uintptr_t	otherPlayer = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwEntityList + (i * 0x10));
+			otherPlayer = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwEntityList + (i * 0x10));
 
 			if (otherPlayer) {
 
-				uint32_t	otherPlayerTeam = m_readProcessMemory<uint32_t>(otherPlayer + offsets::m_iTeamNum);
-				uint32_t	glow = m_readProcessMemory<uint32_t>(otherPlayer + offsets::m_iGlowIndex);
+				otherPlayerTeam = m_readProcessMemory<uint32_t>(otherPlayer + offsets::m_iTeamNum);
+				glow = m_readProcessMemory<uint32_t>(otherPlayer + offsets::m_iGlowIndex);
 
 				if (otherPlayerTeam != pTeam) {
-					m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x8), 1.f);
-					m_writeProcessMemory(glowManager + ((glow * 0x38) + 0xC), 0.0f);
-					m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x10), 0.0f);
-					m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x14), 1.f);
+					m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x8), 1.f);		//r
+					m_writeProcessMemory(glowManager + ((glow * 0x38) + 0xC), 0.0f);	//g
+					m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x10), 0.0f);	//b
+					m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x14), 1.f);	//a
 				}
 				m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x27), true);
 				m_writeProcessMemory(glowManager + ((glow * 0x38) + 0x28), true);
@@ -106,25 +153,37 @@ void	Bypass::m_glow() {
 	}
 }
 
-void	Bypass::m_trig() {
+void	Bypass::m_trig() noexcept {
+
+	uintptr_t player;
+	uintptr_t crosshair;
+	uintptr_t playerInCrosshair;
+	
+	uint16_t playerTeam;
+	uint16_t pTeam;
+	const uint8_t	MAXPLAYERS_CFG = std::get<int>(m_cfg["MAXPLAYERS"]);
+	const uint8_t	K_TRIG_CFG = std::get<int>(m_cfg["K_TRIGLOCK"]);
+
+
 	while (m_mutex.trigIsActive) {
-		if (GetAsyncKeyState(K_TRIGLOCK)) {
+		if (GetAsyncKeyState(K_TRIG_CFG)) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(2));
 
-			uintptr_t player = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
-			uintptr_t crosshair = m_readProcessMemory<uintptr_t>(player + offsets::m_iCrosshairId);
+			player = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
+			crosshair = m_readProcessMemory<uintptr_t>(player + offsets::m_iCrosshairId);
 
-			if (crosshair && crosshair < MAXPLAYERS) {
+			if (crosshair && crosshair < MAXPLAYERS_CFG) {
 
-				uintptr_t playerInCrosshair = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwEntityList + (crosshair - 1) * 16);
+				playerInCrosshair = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwEntityList + (crosshair - 1) * 16);
 
 				if (playerInCrosshair) {
 
-					uint16_t playerTeam = m_readProcessMemory<uint16_t>(playerInCrosshair + offsets::m_iTeamNum);
-					uint16_t pTeam = m_readProcessMemory<uint16_t>(player + offsets::m_iTeamNum);
+					playerTeam = m_readProcessMemory<uint16_t>(playerInCrosshair + offsets::m_iTeamNum);
+					pTeam = m_readProcessMemory<uint16_t>(player + offsets::m_iTeamNum);
 
 					if (playerTeam != pTeam) {
 						m_writeProcessMemory(m_modBaseAddr + offsets::dwForceAttack, 5);
-						Sleep(12);
+						std::this_thread::sleep_for(std::chrono::milliseconds(12));
 						m_writeProcessMemory(m_modBaseAddr + offsets::dwForceAttack, 4);
 					}
 				}
@@ -133,16 +192,26 @@ void	Bypass::m_trig() {
 	}
 }
 
-void	Bypass::m_radar() {
+void	Bypass::m_radar() noexcept {
+
+	uintptr_t	entity;
+	uintptr_t	player;
+	
+	uint32_t	pTeam;
+	uint32_t	enemyTeam;
+
+	const uint8_t	MAXPLAYERS_CFG = std::get<int>(m_cfg["MAXPLAYERS"]);
+
 	while (m_mutex.radarIsActive) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(2));
 
-		uintptr_t	player = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
-		uint32_t	pTeam = m_readProcessMemory<uint32_t>(player + offsets::m_iTeamNum);
+		player = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
+		pTeam = m_readProcessMemory<uint32_t>(player + offsets::m_iTeamNum);
 
-		for (uint8_t i = 0; i < MAXPLAYERS; i++) {
+		for (uint8_t i = 0; i < MAXPLAYERS_CFG; i++) {
 
-			uintptr_t	entity = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwEntityList + (i * 0x10));
-			uint32_t	enemyTeam = m_readProcessMemory<uint32_t>(entity + offsets::m_iTeamNum);
+			entity = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwEntityList + (i * 0x10));
+			enemyTeam = m_readProcessMemory<uint32_t>(entity + offsets::m_iTeamNum);
 
 			if (enemyTeam == pTeam)
 				continue;
@@ -152,33 +221,55 @@ void	Bypass::m_radar() {
 	}
 }
 
-void	Bypass::m_aimbot() {
-	while (m_mutex.aimbotIsActive) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+void	Bypass::m_aimbot() noexcept {
 
-		if (!GetAsyncKeyState(K_AIMLOCK))
+	uintptr_t	lPlayer;
+	uintptr_t	clientState;
+	uintptr_t	player;
+	uintptr_t	boneMatrix;
+	
+	int32_t			pTeam;
+	int32_t			lPlayerId;
+	const uint8_t	MAXPLAYERS_CFG = std::get<int>(m_cfg["MAXPLAYERS"]);
+	const uint8_t	K_AIMBOT_CFG = std::get<int>(m_cfg["K_AIMLOCK"]);
+	
+	float			fov;
+	float			bestFov;
+	const float		AIMBOT_SMOOTH_CFG = std::get<float>(m_cfg["AIMBOT_SMOOTH"]);
+
+	Vector3		localEyePosition;
+	Vector3		viewAngles;
+	Vector3		aimPunch;
+	Vector3		bestAngle;
+	Vector3		playerHeadPosition;
+	Vector3		angle;
+
+	while (m_mutex.aimbotIsActive) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(2));
+
+		if (!GetAsyncKeyState(K_AIMBOT_CFG))
 			continue;
 
-		const uintptr_t	&lPlayer = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
-		const int32_t	&pTeam = m_readProcessMemory<int32_t>(lPlayer + offsets::m_iTeamNum);
+		lPlayer = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
+		pTeam = m_readProcessMemory<int32_t>(lPlayer + offsets::m_iTeamNum);
 
-		const Vector3	localEyePosition = m_readProcessMemory<Vector3>(lPlayer + offsets::m_vecOrigin)
+		localEyePosition = m_readProcessMemory<Vector3>(lPlayer + offsets::m_vecOrigin)
 							+ m_readProcessMemory<Vector3>(lPlayer + offsets::m_vecViewOffset);
 
-		const uintptr_t	&clientState = m_readProcessMemory<uintptr_t>(m_engineAddr + offsets::dwClientState);
+		clientState = m_readProcessMemory<uintptr_t>(m_engineAddr + offsets::dwClientState);
 
-		const int32_t	&lPlayerId = m_readProcessMemory<int32_t>(clientState + offsets::dwClientState_GetLocalPlayer);
+		lPlayerId = m_readProcessMemory<int32_t>(clientState + offsets::dwClientState_GetLocalPlayer);
 
-		const Vector3	&viewAngles = m_readProcessMemory<Vector3>(clientState + offsets::dwClientState_ViewAngles);
+		viewAngles = m_readProcessMemory<Vector3>(clientState + offsets::dwClientState_ViewAngles);
 		
-		const Vector3	&aimPunch = m_readProcessMemory<Vector3>(lPlayer + offsets::m_aimPunchAngle) * 2;
+		aimPunch = m_readProcessMemory<Vector3>(lPlayer + offsets::m_aimPunchAngle) * 2;
 
-		float	bestFov = AIMBOT_FOV;
-		Vector3	bestAngle = Vector3{ };
+		bestFov = std::get<float>(m_cfg["AIMBOT_FOV"]);
+		bestAngle = Vector3{ };
 
-		for (uint8_t i = 1; i <= MAXPLAYERS; i++) {
+		for (uint8_t i = 0; i <= MAXPLAYERS_CFG; i++) {
 
-			const uintptr_t player = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwEntityList + i * 0x10);
+			player = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwEntityList + i * 0x10);
 
 			if (m_readProcessMemory<int32_t>(player + offsets::m_iTeamNum) == pTeam)
 				continue;
@@ -191,21 +282,21 @@ void	Bypass::m_aimbot() {
 
 			if (m_readProcessMemory<int32_t>(player + offsets::m_bSpottedByMask) & (1 << lPlayerId)) {
 
-				const uintptr_t boneMatrix = m_readProcessMemory<uintptr_t>(player + offsets::m_dwBoneMatrix);
+				boneMatrix = m_readProcessMemory<uintptr_t>(player + offsets::m_dwBoneMatrix);
 
-				const Vector3 playerHeadPosition = Vector3{
+				playerHeadPosition = Vector3{
 					m_readProcessMemory<float>(boneMatrix + 0x30 * 8 + 0x0C),
 					m_readProcessMemory<float>(boneMatrix + 0x30 * 8 + 0x1C),
 					m_readProcessMemory<float>(boneMatrix + 0x30 * 8 + 0x2C)
 				};
 
-				const Vector3 angle = CalculateAngle(
+				angle = CalculateAngle(
 					localEyePosition,
 					playerHeadPosition,
 					viewAngles + aimPunch
 				);
 
-				const float fov = std::hypot(angle.x, angle.y);
+				fov = std::hypot(angle.x, angle.y);
 
 				if (fov < bestFov) {
 					bestFov = fov;
@@ -214,27 +305,34 @@ void	Bypass::m_aimbot() {
 			}
 		}
 		if (!bestAngle.IsZero()) {
-			m_writeProcessMemory(clientState + offsets::dwClientState_ViewAngles, viewAngles + bestAngle / AIMBOT_SMOOTH);
+			m_writeProcessMemory(clientState + offsets::dwClientState_ViewAngles, viewAngles + bestAngle / AIMBOT_SMOOTH_CFG);
 		}
 	}
 }
 
-void	Bypass::m_skinChanger() {
+void	Bypass::m_skinChanger() noexcept {
 	
+	uintptr_t						lPlayer;
+	uintptr_t						weapon;
+	std::array<unsigned long, 8>	weapons;
+	bool							shouldUpdate;
+	short							paint;
+
 	while (true) {
-		uintptr_t	lPlayer = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
-		auto		weapons = m_readProcessMemory<std::array<unsigned long, 8>>(lPlayer + offsets::m_hMyWeapons);
+		
+		lPlayer = m_readProcessMemory<uintptr_t>(m_modBaseAddr + offsets::dwLocalPlayer);
+		weapons = m_readProcessMemory<std::array<unsigned long, 8>>(lPlayer + offsets::m_hMyWeapons);
 		
 		for (auto &handle : weapons) {
 		
-			uintptr_t weapon = m_readProcessMemory<uintptr_t>((m_modBaseAddr + offsets::dwEntityList + (handle & 0xFFF) * 0x10) - 0x10);
+			weapon = m_readProcessMemory<uintptr_t>((m_modBaseAddr + offsets::dwEntityList + (handle & 0xFFF) * 0x10) - 0x10);
 			
 			if (!weapon)
 				continue;
 
-			if (short paint = getWeaponPaint(m_readProcessMemory<short>(weapon + offsets::m_iItemDefinitionIndex))) {
+			if (paint = getWeaponPaint(m_readProcessMemory<short>(weapon + offsets::m_iItemDefinitionIndex))) {
 
-				bool shouldUpdate = m_readProcessMemory<int32_t>(weapon + offsets::m_nFallbackPaintKit) != paint;
+				shouldUpdate = m_readProcessMemory<int32_t>(weapon + offsets::m_nFallbackPaintKit) != paint;
 
 				m_writeProcessMemory<int32_t>(weapon + offsets::m_iItemIDHigh, -1);
 				
@@ -250,7 +348,7 @@ void	Bypass::m_skinChanger() {
 
 
 /* main function */
-void	Bypass::startMultiThreading() {
+void	Bypass::startMultiThreading() noexcept {
 	
 	bool	refreshMenu;
 
@@ -265,7 +363,7 @@ void	Bypass::startMultiThreading() {
 		refreshMenu = false;
 
 		/* Aimbot part's */
-		if (GetAsyncKeyState(K_AIMBOT) & 0x8000) {
+		if (GetAsyncKeyState(std::get<int>(m_cfg["K_AIMBOT"])) & 0x8000) {
 			refreshMenu = true;
 			m_mutex.aimbotIsActive = !m_mutex.aimbotIsActive;
 
@@ -277,7 +375,7 @@ void	Bypass::startMultiThreading() {
 		}
 
 		/* Trigger part's */
-		if (GetAsyncKeyState(K_TRIG) & 0x8000) {
+		if (GetAsyncKeyState(std::get<int>(m_cfg["K_TRIG"])) & 0x8000) {
 			refreshMenu = true;
 			m_mutex.trigIsActive = !m_mutex.trigIsActive;
 
@@ -289,7 +387,7 @@ void	Bypass::startMultiThreading() {
 		}
 
 		/* Radar hack part's */
-		if (GetAsyncKeyState(K_RADAR) & 0x8000) {
+		if (GetAsyncKeyState(std::get<int>(m_cfg["K_RADAR"])) & 0x8000) {
 				refreshMenu = true;
 				m_mutex.radarIsActive = !m_mutex.radarIsActive;
 
@@ -301,7 +399,7 @@ void	Bypass::startMultiThreading() {
 		}
 
 		/* Glow part's */
-		if (GetAsyncKeyState(K_GLOW) & 0x8000) {
+		if (GetAsyncKeyState(std::get<int>(m_cfg["K_GLOW"])) & 0x8000) {
 			refreshMenu = true;
 			m_mutex.glowIsActive = !m_mutex.glowIsActive;
 

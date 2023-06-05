@@ -80,7 +80,7 @@ const int getWeaponPaint(const short itemId) {
 		case WEAPON_DEAGLE:			return 711;
 		case WEAPON_GLOCK:			return 38;
 		case WEAPON_AK47:			return 180;
-		case WEAPON_AWP:			return 446;
+		case WEAPON_AWP:			return 344;
 		case WEAPON_USP_SILENCER:	return 653;
 		case WEAPON_M4A1_SILENCER:	return 497;
 		case WEAPON_M4A1:			return 309;

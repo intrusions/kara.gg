@@ -9,34 +9,28 @@
 #include <atomic>
 #include <iomanip>
 #include <array>
+#include <map>
+#include <fstream>
+#include <string>
+#include <variant>
+
 
 /* game infos */
 #define WIN_NAME		"Counter-Strike: Global Offensive - Direct3D 9"
 #define CLIENT_MODNAME	"client.dll"
 #define ENGINE_MODNAME	"engine.dll"
-
-/* ingame settings */
-#define MAXPLAYERS		32
-#define AIMBOT_FOV		1.5f
-#define AIMBOT_SMOOTH	3.f
-
-/* keys settings */
-#define K_AIMBOT		0x37
-#define K_GLOW			0x38
-#define K_TRIG			0x39
-#define K_RADAR			0x30
-#define K_AIMLOCK		0x01
-#define	K_TRIGLOCK		0x43
-
+#define SETTINGS_CFG	"settings.cfg"
 
 class Bypass {
 
 	private:
-		HANDLE			m_hProcess;
-		DWORD			m_processId;
-		uintptr_t		m_modBaseAddr;
-		uintptr_t		m_engineAddr;
-		Mutex			m_mutex;
+		HANDLE		m_hProcess;
+		DWORD		m_processId;
+		uintptr_t	m_modBaseAddr;
+		uintptr_t	m_engineAddr;
+		Mutex		m_mutex;
+		
+		std::map<std::string, std::variant<int, float>>	m_cfg;
 
 	public:
 		Bypass();
@@ -44,25 +38,28 @@ class Bypass {
 
 
 		/* memory function */
-		bool	attach(void);
-		bool	getModuleBaseAddress(const char* modName);
+		bool	attach(void) noexcept;
+		bool	getModuleBaseAddress(const char* modName) noexcept;
 
+		/* parsing cfg file */
+		bool	ParseConfigFile(std::string cfgName);
 
 		/* rpm/wpm function */
 		template<typename T>
-		void	m_writeProcessMemory(uintptr_t lpBaseAddress, T lpBuffer);
+		inline void		m_writeProcessMemory(uintptr_t lpBaseAddress, T lpBuffer) noexcept;
+		
 		template<typename T>
-		T		&m_readProcessMemory(uintptr_t lpBaseAddress);
+		inline T		&m_readProcessMemory(uintptr_t lpBaseAddress) noexcept;
 
 
 		/* multithreading init */
-		void	startMultiThreading(void);
+		void	startMultiThreading(void) noexcept;
 
 
 		/* cheating function */
-		void	m_aimbot(void);
-		void	m_glow(void);
-		void	m_trig(void);
-		void	m_radar(void);
-		void	m_skinChanger(void);
+		void	m_aimbot(void) noexcept;
+		void	m_glow(void) noexcept;
+		void	m_trig(void) noexcept;
+		void	m_radar(void) noexcept;
+		void	m_skinChanger(void) noexcept;
 };
