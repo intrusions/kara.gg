@@ -16,13 +16,13 @@
 
 
 ## Aimbot demo (FOV_50/AIMBOT_SMOOTH_3)
-![Demo GIF](./aim_fov_50.gif)
+![Demo GIF](./assets/aim_fov_50.gif)
 
 ## Glow ESP demo
-![Demo GIF](./glow.gif)
+![Demo GIF](./assets/glow.gif)
 
 ## Trigger demo
-![Demo GIF](./trigger.gif)
+![Demo GIF](./assets/trigger.gif)
 
 ## Installation & Setup
 1. Clone the repository: `git clone https://github.com/intrusions/kara.gg.git`
