@@ -12,7 +12,8 @@
 
 ## Screenshots
 ![Screenshot_1](https://github.com/intrusions/kara.gg/assets/65361679/5b8cbbd6-0f71-41d0-a1e2-35e8f9bc5309)
-![Screenshot 2](https://github.com/intrusions/kara.gg/assets/65361679/88aa56b5-b03e-4641-80c4-a11430d23ccc)
+![Screenshot_2](https://github.com/intrusions/kara.gg/assets/65361679/c6126e9d-87a6-489b-b033-d0f0d2700088)
+
 
 ## Aimbot demo (FOV_50/AIMBOT_SMOOTH_3)
 ![Demo GIF](./aim_fov_50.gif)
