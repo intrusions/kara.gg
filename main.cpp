@@ -1,6 +1,6 @@
-#include "Bypass.hpp"
-#include "Vector3.hpp"
-#include "Utils.hpp"
+#include "./header/Bypass.hpp"
+#include "./header/Vector3.hpp"
+#include "./header/Utils.hpp"
 
 int main()
 {
