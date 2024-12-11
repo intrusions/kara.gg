@@ -23,10 +23,3 @@
 
 ## Trigger demo
 ![Demo GIF](./assets/trigger.gif)
-
-## Installation & Setup
-1. Clone the repository: `git clone https://github.com/intrusions/kara.gg.git`
-2. Setup your aimbot FOV and your keys in `settings.cfg`
-3. Update the offsets with the new ones respecting the current format: `https://github.com/frk1/hazedumper.git`
-4. Open the project in `Visual Studio` and compile it in `Release x86` mode
-5. Execute it when the game is launched
